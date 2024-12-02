@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class TgBot:
     token: str  #токен для доступа к боту
 
+@dataclass
 class Config:
     tg_bot: TgBot
 
