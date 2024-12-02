@@ -2,7 +2,7 @@ import asyncio
 
 from config_data.config import Config, load_config
 from aiogram import Dispatcher, Bot
-from hanlers import other_hanlers, user_handlers
+from handlers import other_hanlers, user_handlers
 
 async def main() -> None:
     config: Config = load_config() #Загружаем токен
