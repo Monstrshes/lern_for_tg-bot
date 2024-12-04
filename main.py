@@ -12,26 +12,27 @@ bot = Bot(env('BOT_TOKEN'))
 dp = Dispatcher()
 
 
-webapp_button = KeyboardButton(text='Start Web App', web_app=WebAppInfo(url='https://ru.wiktionary.org/wiki/%D0%B8%D0%B4%D0%B8_%D0%BD%D0%B0_%D1%85%D1%83%D0%B9'))
+# Создаем список списков с кнопками
+keyboard: list[list[KeyboardButton]] = [
+    [KeyboardButton(text=str(i)) for i in range(1, 4)],
+    [KeyboardButton(text=str(i)) for i in range(4, 7)]
+]
 
-kb_builder= ReplyKeyboardBuilder()
+keyboard.append(KeyboardButton(text='7'))
 
-# Добавляем кнопки в билдер
-kb_builder.row(webapp_button, width=1)
-
-# Создаем объект клавиатуры
-keyboard: ReplyKeyboardMarkup = kb_builder.as_markup(
-    resize_keyboard=True,
-    one_time_keyboard=True
+# Создаем объект клавиатуры, добавляя в него кнопки
+my_keyboard = ReplyKeyboardMarkup(
+    keyboard=keyboard,
+    resize_keyboard=True
 )
 
 
 # Этот хэндлер будет срабатывать на команду "/start"
-@dp.message(Command(commands='show_web'))
+@dp.message(CommandStart())
 async def process_start_command(message: Message):
     await message.answer(
-        text='Переходи по ссылке',
-        reply_markup=keyboard
+        text='Вот твоя клавиатура',
+        reply_markup=my_keyboard
     )
 if __name__ == '__main__':
     dp.run_polling(bot)
