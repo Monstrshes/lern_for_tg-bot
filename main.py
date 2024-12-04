@@ -1,38 +1,46 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, KeyboardButtonPollType, Message
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from environs import Env
+import asyncio
+import logging
+
 from aiogram import Bot, Dispatcher
-from aiogram.filters import CommandStart, Command
-from aiogram.types.web_app_info import WebAppInfo
-
-env = Env()
-env.read_env()
-
-bot = Bot(env('BOT_TOKEN'))
-dp = Dispatcher()
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from config_data.config import Config, load_config
+# Импортируем роутеры
+from handlers import router1, router2
 
 
-# Создаем список списков с кнопками
-keyboard: list[list[KeyboardButton]] = [
-    [KeyboardButton(text=str(i)) for i in range(1, 4)],
-    [KeyboardButton(text=str(i)) for i in range(4, 7)]
-]
-
-keyboard.append(KeyboardButton(text='7'))
-
-# Создаем объект клавиатуры, добавляя в него кнопки
-my_keyboard = ReplyKeyboardMarkup(
-    keyboard=keyboard,
-    resize_keyboard=True
-)
+# Инициализируем логгер
+logger = logging.getLogger(__name__)
 
 
-# Этот хэндлер будет срабатывать на команду "/start"
-@dp.message(CommandStart())
-async def process_start_command(message: Message):
-    await message.answer(
-        text='Вот твоя клавиатура',
-        reply_markup=my_keyboard
+# Функция конфигурирования и запуска бота
+async def main():
+    # Конфигурируем логирование
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(filename)s:%(lineno)d #%(levelname)-8s '
+               '[%(asctime)s] - %(name)s - %(message)s')
+
+    # Выводим в консоль информацию о начале запуска бота
+    logger.info('Starting bot')
+
+    # Загружаем конфиг в переменную config
+    config: Config = load_config()
+
+
+    bot = Bot(
+        token=config.tg_bot.token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
-if __name__ == '__main__':
-    dp.run_polling(bot)
+    dp = Dispatcher()
+
+    logger.info('Подключаем роутеры')
+    dp.include_router(router1)
+    dp.include_router(router2)
+
+    # Пропускаем накопившиеся апдейты и запускаем polling
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
+
+
+asyncio.run(main())
