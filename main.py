@@ -1,39 +1,37 @@
-from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart
-from aiogram.types import (KeyboardButton, Message, ReplyKeyboardMarkup,
-                           ReplyKeyboardRemove)
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, KeyboardButtonPollType, Message
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from environs import Env
+from aiogram import Bot, Dispatcher
+from aiogram.filters import CommandStart, Command
+from aiogram.types.web_app_info import WebAppInfo
 
 env = Env()
 env.read_env()
 
-bot = Bot(token=env('BOT_TOKEN'))
+bot = Bot(env('BOT_TOKEN'))
 dp = Dispatcher()
 
-button1 = KeyboardButton(text='Кнопка 1')
-button2 = KeyboardButton(text='Кнопка 2')
-button3 = KeyboardButton(text='Кнопка 3')
-button4 = KeyboardButton(text='Кнопка 4')
-button5 = KeyboardButton(text='Кнопка 5')
-button6 = KeyboardButton(text='Кнопка 6')
-button7 = KeyboardButton(text='Кнопка 7')
-button8 = KeyboardButton(text='Кнопка 8')
-button9 = KeyboardButton(text='Кнопка 9')
 
-keyboard1 = ReplyKeyboardMarkup(keyboard=[
-    [button1, button1],
-    [button3, button4],
-    [button5, button6],
-    [button7, button8],
-    [button9]
+webapp_button = KeyboardButton(text='Start Web App', web_app=WebAppInfo(url='https://ru.wiktionary.org/wiki/%D0%B8%D0%B4%D0%B8_%D0%BD%D0%B0_%D1%85%D1%83%D0%B9'))
 
-],
-resize_keyboard=True
+kb_builder= ReplyKeyboardBuilder()
+
+# Добавляем кнопки в билдер
+kb_builder.row(webapp_button, width=1)
+
+# Создаем объект клавиатуры
+keyboard: ReplyKeyboardMarkup = kb_builder.as_markup(
+    resize_keyboard=True,
+    one_time_keyboard=True
 )
 
-@dp.message(CommandStart())
-async def process_start_command(message: Message):
-    await message.answer(text='Это твоя клавиатура', reply_markup=keyboard1)
 
+# Этот хэндлер будет срабатывать на команду "/start"
+@dp.message(Command(commands='show_web'))
+async def process_start_command(message: Message):
+    await message.answer(
+        text='Переходи по ссылке',
+        reply_markup=keyboard
+    )
 if __name__ == '__main__':
     dp.run_polling(bot)
