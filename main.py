@@ -5,14 +5,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from config_data.config import Config, load_config
-# Импортируем роутеры
-from handlers import router1, router2
-
+from keyboards.set_menu import set_menu
 
 # Инициализируем логгер
 logger = logging.getLogger(__name__)
-
-
+print(dir(set_menu))
 # Функция конфигурирования и запуска бота
 async def main():
     # Конфигурируем логирование
@@ -27,16 +24,17 @@ async def main():
     # Загружаем конфиг в переменную config
     config: Config = load_config()
 
-
+    # Инициализируем бот и диспетчер
     bot = Bot(
         token=config.tg_bot.token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     dp = Dispatcher()
 
-    logger.info('Подключаем роутеры')
-    dp.include_router(router1)
-    dp.include_router(router2)
+    # Регистриуем роутеры в диспетчере
+
+    await set_menu(bot)
+
 
     # Пропускаем накопившиеся апдейты и запускаем polling
     await bot.delete_webhook(drop_pending_updates=True)
