@@ -2,46 +2,54 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
 from config_data.config import Config, load_config
-from keyboards.set_menu import set_main_menu
-from handlers import user_handlers
+from handlers.other import other_router
+from handlers.user import user_router
+from middlewares.inner import (
+    FirstInnerMiddleware,
+    SecondInnerMiddleware,
+    ThirdInnerMiddleware,
+)
+from middlewares.outer import (
+    FirstOuterMiddleware,
+    SecondOuterMiddleware,
+    ThirdOuterMiddleware,
+)
 
+# Настраиваем базовую конфигурацию логирования
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] #%(levelname)-8s %(filename)s:'
+           '%(lineno)d - %(name)s - %(message)s'
+)
 
-
-# Инициализируем логгер
+# Инициализируем логгер модуля
 logger = logging.getLogger(__name__)
 
-# Функция конфигурирования и запуска бота
-async def main():
-    # Конфигурируем логирование
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(filename)s:%(lineno)d #%(levelname)-8s '
-               '[%(asctime)s] - %(name)s - %(message)s')
 
-    # Выводим в консоль информацию о начале запуска бота
-    logger.info('Starting bot')
+# Функция конфигурирования и запуска бота
+async def main() -> None:
 
     # Загружаем конфиг в переменную config
     config: Config = load_config()
 
     # Инициализируем бот и диспетчер
-    bot = Bot(
-        token=config.tg_bot.token,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
+    bot = Bot(token=config.tg_bot.token)
     dp = Dispatcher()
 
-    # Регистриуем роутеры в диспетчере
-    dp.include_router(user_handlers.router)
+    # Регистрируем роутеры в диспетчере
+    dp.include_router(user_router)
+    dp.include_router(other_router)
 
-    await set_main_menu(bot)
+    # Здесь будем регистрировать миддлвари
 
-
-    # Пропускаем накопившиеся апдейты и запускаем polling
-    await bot.delete_webhook(drop_pending_updates=True)
+    dp.update.outer_middleware(FirstOuterMiddleware())
+    user_router.callback_query.outer_middleware(SecondOuterMiddleware())
+    other_router.message.outer_middleware(ThirdOuterMiddleware())
+    user_router.message.middleware(FirstInnerMiddleware())
+    user_router.message.middleware(SecondInnerMiddleware())
+    other_router.message.middleware(ThirdInnerMiddleware())
+    # Запускаем polling
     await dp.start_polling(bot)
 
 
